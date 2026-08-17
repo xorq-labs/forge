@@ -609,3 +609,31 @@ func TestWriteResponseFormatsJSONLines(t *testing.T) {
 	assert.JSONEq(`{"version":"dev"}`, strings.TrimSpace(objectOut.String()))
 	assert.NotContains(objectOut.String(), "\n\n")
 }
+
+// TestOutputFormatsAllEncode ties the accepted --output values to the encoder.
+// encodeStructured switches on the format independently of OutputFormats, so a
+// value added to the list without an encoder case fails here rather than
+// reaching users as an "unsupported output format" error at runtime.
+func TestOutputFormatsAllEncode(t *testing.T) {
+	for _, format := range OutputFormats() {
+		var buf bytes.Buffer
+		require.NoError(
+			t,
+			encodeStructured(&buf, format, map[string]any{"item": "value"}),
+			"accepted output format %q must encode",
+			format,
+		)
+		assert.NotEmpty(t, buf.String())
+	}
+}
+
+// TestOutputFormatsRejectsUnlistedFormat proves the encoder guard above can
+// fail: a format outside the accepted list must not encode.
+func TestOutputFormatsRejectsUnlistedFormat(t *testing.T) {
+	var buf bytes.Buffer
+
+	err := encodeStructured(&buf, "toml", map[string]any{"item": "value"})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported output format")
+}

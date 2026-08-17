@@ -11,6 +11,7 @@ import (
 	"os"
 	pathpkg "path"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -178,7 +179,7 @@ func installControlFlagValidation(root *cobra.Command) {
 	previous := root.PersistentPreRun
 	root.PersistentPreRun = nil
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		if !isControlCommand(cmd) {
+		if !IsControlCommand(cmd) {
 			for _, name := range []string{"server", "output", "timeout"} {
 				if root.PersistentFlags().Changed(name) {
 					return fmt.Errorf("--%s can only be used with API control commands", name)
@@ -195,7 +196,11 @@ func installControlFlagValidation(root *cobra.Command) {
 	}
 }
 
-func isControlCommand(cmd *cobra.Command) bool {
+// IsControlCommand reports whether cmd or one of its ancestors is an API
+// control command. The --server, --output, and --timeout persistent flags are
+// rejected everywhere else, so shell completion must not offer their values on
+// commands that would refuse them.
+func IsControlCommand(cmd *cobra.Command) bool {
 	for current := cmd; current != nil; current = current.Parent() {
 		if current.Annotations[controlCommandMarker] == "true" {
 			return true
@@ -213,9 +218,17 @@ func mustBind(cfg *viper.Viper, flag *pflag.Flag, key string) {
 	}
 }
 
+// OutputFormats lists every value the --output flag accepts, in the order help
+// text presents them. Flag validation, the quickstart payload, encodeStructured
+// coverage, and shell completion all read this list so a new format cannot
+// reach one of them alone.
+func OutputFormats() []string {
+	return []string{"json", "yaml", "jsonl"}
+}
+
 func readConfig(cfg *viper.Viper) (cliConfig, error) {
 	out := strings.ToLower(strings.TrimSpace(cfg.GetString("output")))
-	if out != "json" && out != "yaml" && out != "jsonl" {
+	if !slices.Contains(OutputFormats(), out) {
 		return cliConfig{}, fmt.Errorf("unsupported output format %q", out)
 	}
 	server, err := resolveServer(cfg)
@@ -327,7 +340,7 @@ func newQuickstartCommand(cfg *viper.Viper, stdout io.Writer) *cobra.Command {
 			}
 			payload := map[string]any{
 				"api_base_url": mustAPIURL(current.server, apiPrefix, nil),
-				"formats":      []string{"json", "yaml", "jsonl"},
+				"formats":      OutputFormats(),
 				"commands": []map[string]string{
 					{"command": "kenn-forge pulls --state open --limit 20", "does": "GET /api/v1/pulls with query parameters"},
 					{"command": "kenn-forge issues --output jsonl", "does": "Emit one issue JSON object per line"},

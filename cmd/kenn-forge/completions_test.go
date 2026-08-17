@@ -11,6 +11,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.kenn.io/forge/internal/archive/report"
+	"go.kenn.io/forge/internal/cli/ctl"
 	"go.kenn.io/forge/internal/cli/serve"
 )
 
@@ -51,10 +53,48 @@ func TestOutputFlagCompletion(t *testing.T) {
 	completion, ok := root.GetFlagCompletionFunc("output")
 	require.True(t, ok)
 
-	got, directive := completion(root, nil, "")
+	got, directive := completion(mustFindCommand(root, "pulls"), nil, "")
 
-	assert.ElementsMatch(t, []cobra.Completion{"json", "yaml", "jsonl"}, got)
+	assert.ElementsMatch(t, ctl.OutputFormats(), got)
 	assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
+}
+
+// TestOutputFlagCompletionSkipsNonControlCommands guards the inherited
+// persistent flag: commands outside the control tree reject --output, so
+// completion must not suggest values they would refuse.
+func TestOutputFlagCompletionSkipsNonControlCommands(t *testing.T) {
+	root := newCompletionTestRoot(t, nil)
+
+	completion, ok := root.GetFlagCompletionFunc("output")
+	require.True(t, ok)
+
+	got, directive := completion(mustFindCommand(root, "version"), nil, "")
+
+	assert.Empty(t, got)
+	assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
+}
+
+func TestArchiveFormatFlagCompletion(t *testing.T) {
+	root := newCompletionTestRoot(t, nil)
+	report := mustFindCommand(root, "archive", "report")
+
+	completion, ok := report.GetFlagCompletionFunc("format")
+	require.True(t, ok)
+
+	got, directive := completion(report, nil, "")
+
+	assert.ElementsMatch(t, []cobra.Completion{"markdown", "json"}, got)
+	assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
+}
+
+// TestArchiveReportFormatsAllRender ties the completed formats to the renderer,
+// so a format added to the list without renderer support fails here.
+func TestArchiveReportFormatsAllRender(t *testing.T) {
+	for _, format := range archiveReportFormats() {
+		rendered, err := renderArchiveReport(report.Model{}, format)
+		require.NoError(t, err, "completed archive format %q must render", format)
+		require.NotEmpty(t, rendered)
+	}
 }
 
 func TestKanbanFlagCompletion(t *testing.T) {
@@ -124,7 +164,7 @@ func TestConfigReadKeysAllResolve(t *testing.T) {
 	cfgPath := filepath.Join(dir, "config.toml")
 	require.NoError(os.WriteFile(cfgPath, []byte("port = 9123\n"), 0o644))
 
-	for _, key := range ConfigReadKeys {
+	for _, key := range ConfigReadKeys() {
 		var stdout bytes.Buffer
 		require.NoError(readConfigValue(cfgPath, key, &stdout), "completed key %q must resolve", key)
 		require.NotEmpty(stdout.String())

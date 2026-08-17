@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/spf13/cobra"
+	"go.kenn.io/forge/internal/cli/ctl"
 	"go.kenn.io/forge/internal/db"
 	"go.kenn.io/forge/internal/platform"
 	"go.kenn.io/kit/agenthook"
@@ -21,6 +22,7 @@ func registerCompletions(root *cobra.Command) {
 	registerProviderArgCompletion(mustFindCommand(root, "issues", "get"))
 	registerAPIMethodCompletion(mustFindCommand(root, "api"))
 	registerConfigKeyCompletion(mustFindCommand(root, "config", "read"))
+	registerArchiveFormatCompletion(mustFindCommand(root, "archive", "report"))
 	for _, name := range []string{"run", "install", "uninstall"} {
 		registerAgentCompletion(mustFindCommand(root, "agent-hook", name))
 	}
@@ -62,12 +64,29 @@ func registerAgentCompletion(cmd *cobra.Command) {
 }
 
 // registerOutputCompletion registers shell completion for the --output flag.
+// The flag is persistent on the root, so every command inherits it; only API
+// control commands accept it, and the completer stays silent elsewhere rather
+// than suggesting values the command would reject.
 // Panics if the flag doesn't exist on the command (programming error).
 func registerOutputCompletion(cmd *cobra.Command) {
-	if err := cmd.RegisterFlagCompletionFunc("output", func(_ *cobra.Command, _ []string, _ string) ([]cobra.Completion, cobra.ShellCompDirective) {
-		return []cobra.Completion{"json", "yaml", "jsonl"}, cobra.ShellCompDirectiveNoFileComp
+	if err := cmd.RegisterFlagCompletionFunc("output", func(target *cobra.Command, _ []string, _ string) ([]cobra.Completion, cobra.ShellCompDirective) {
+		if !ctl.IsControlCommand(target) {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		return ctl.OutputFormats(), cobra.ShellCompDirectiveNoFileComp
 	}); err != nil {
 		panic(fmt.Sprintf("registering output completion for %s: %v", cmd.Name(), err))
+	}
+}
+
+// registerArchiveFormatCompletion registers shell completion for the
+// "archive report --format" flag.
+// Panics if the flag doesn't exist on the command (programming error).
+func registerArchiveFormatCompletion(cmd *cobra.Command) {
+	if err := cmd.RegisterFlagCompletionFunc("format", func(_ *cobra.Command, _ []string, _ string) ([]cobra.Completion, cobra.ShellCompDirective) {
+		return archiveReportFormats(), cobra.ShellCompDirectiveNoFileComp
+	}); err != nil {
+		panic(fmt.Sprintf("registering archive format completion for %s: %v", cmd.Name(), err))
 	}
 }
 
@@ -127,6 +146,6 @@ func registerConfigKeyCompletion(cmd *cobra.Command) {
 		if len(args) != 0 {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
-		return append([]cobra.Completion(nil), ConfigReadKeys...), cobra.ShellCompDirectiveNoFileComp
+		return ConfigReadKeys(), cobra.ShellCompDirectiveNoFileComp
 	}
 }

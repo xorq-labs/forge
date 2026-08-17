@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -17,6 +18,14 @@ import (
 	"go.kenn.io/forge/internal/archive/report"
 	"go.kenn.io/forge/internal/config"
 )
+
+// archiveReportFormats lists every value "archive report --format" accepts,
+// with the default first. The flag default, its help text, format validation,
+// the renderer, and shell completion all read this list so a new format cannot
+// reach one of them alone.
+func archiveReportFormats() []string {
+	return []string{"markdown", "json"}
+}
 
 type archiveStringList []string
 
@@ -194,7 +203,12 @@ func newArchiveReportCommand(stdout io.Writer, now func() time.Time) *cobra.Comm
 	cmd.Flags().IntVar(&opts.days, "days", 0, "rolling number of 24-hour UTC periods")
 	cmd.Flags().StringVar(&opts.startValue, "start", "", "inclusive UTC date or RFC3339 boundary")
 	cmd.Flags().StringVar(&opts.endValue, "end", "", "inclusive UTC date or exclusive RFC3339 boundary")
-	cmd.Flags().StringVar(&opts.format, "format", "markdown", "output format: markdown or json")
+	cmd.Flags().StringVar(
+		&opts.format,
+		"format",
+		archiveReportFormats()[0],
+		"output format: "+strings.Join(archiveReportFormats(), " or "),
+	)
 	cmd.Flags().BoolVar(&opts.verbose, "verbose", false, "include bounded activity details")
 	cmd.Flags().StringVar(&opts.output, "output", "", "write output atomically to this file")
 	cmd.Flags().Var(&opts.repositories, "repo", "provider|host/repo_path; repeat for multiple repositories")
@@ -205,8 +219,12 @@ func runArchiveReport(opts archiveReportOptions, daysSet bool, stdout io.Writer,
 	if daysSet && opts.days <= 0 {
 		return errors.New("--days must be positive")
 	}
-	if opts.format != "markdown" && opts.format != "json" {
-		return fmt.Errorf("unsupported archive report format %q; use markdown or json", opts.format)
+	if !slices.Contains(archiveReportFormats(), opts.format) {
+		return fmt.Errorf(
+			"unsupported archive report format %q; use %s",
+			opts.format,
+			strings.Join(archiveReportFormats(), " or "),
+		)
 	}
 	start, end, err := parseArchiveReportRange(now().UTC(), opts.days, opts.startValue, opts.endValue)
 	if err != nil {
@@ -482,8 +500,12 @@ func validArchiveActivityKind(kind report.ActivityKind) bool {
 }
 
 func renderArchiveReport(model report.Model, format string) (string, error) {
-	if format == "markdown" {
+	switch format {
+	case "markdown":
 		return report.RenderMarkdown(model)
+	case "json":
+	default:
+		return "", fmt.Errorf("unsupported archive report format %q", format)
 	}
 	data, err := json.MarshalIndent(model, "", "  ")
 	if err != nil {

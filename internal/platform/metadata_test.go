@@ -93,6 +93,17 @@ func TestNormalizeKindCanonicalizesBuiltInShorthands(t *testing.T) {
 	assert.Equal(KindGitea, tea)
 }
 
+func TestKindsMatchesBuiltInMetadata(t *testing.T) {
+	require := require.New(t)
+
+	registered := make([]Kind, 0, len(builtInMetadata))
+	for kind := range builtInMetadata {
+		registered = append(registered, kind)
+	}
+
+	require.ElementsMatch(registered, Kinds())
+}
+
 func TestSupportedProviderListMatchesBuiltInMetadata(t *testing.T) {
 	require := require.New(t)
 

@@ -254,6 +254,11 @@ func runPtyOwner(root, session, cwd, commandJSON string) error {
 	})
 }
 
+// ConfigReadKeys lists every key "kenn-forge config read" supports. The key
+// switch in readConfigValue and the shell completer both read this list; a
+// test asserts every listed key resolves so the two cannot drift.
+var ConfigReadKeys = []string{"port"}
+
 func readConfigValue(configPath, key string, stdout io.Writer) error {
 	if err := config.EnsureDefault(configPath); err != nil {
 		return fmt.Errorf("ensure config: %w", err)
@@ -268,7 +273,7 @@ func readConfigValue(configPath, key string, stdout io.Writer) error {
 		_, err := fmt.Fprintf(stdout, "%d\n", cfg.Port)
 		return err
 	default:
-		return fmt.Errorf("unsupported config key %q", key)
+		return fmt.Errorf("unsupported config key %q (supported: %s)", key, strings.Join(ConfigReadKeys, ", "))
 	}
 }
 

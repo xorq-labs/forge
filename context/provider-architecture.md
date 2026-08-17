@@ -28,6 +28,9 @@ cmd/internal/server/etc. -> registry plus provider-neutral DB rows
 Do not make a provider package import server code, config startup, or another
 provider package. Do not make `internal/platform` import provider-specific SDKs.
 
+Code that enumerates the supported providers must read `platform.Kinds()`
+instead of restating the kind strings (`internal/platform/types.go::Kinds`).
+
 ## Adding A Provider
 
 Minimum provider checklist:

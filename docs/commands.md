@@ -3,6 +3,21 @@
 Run `kenn-forge` or `kenn-forge --help` for the complete command tree. Flags
 are scoped to the commands that use them; check command help before scripting.
 
+## Enable shell completion
+
+Load completions for your shell:
+
+```sh
+source <(kenn-forge completion bash)   # bash
+source <(kenn-forge completion zsh)    # zsh
+kenn-forge completion fish | source    # fish
+```
+
+Completion covers commands, flags, and known values such as agent-hook
+integrations, providers, and output formats. Run
+`kenn-forge completion <shell> --help` for instructions to load completions
+in every new session.
+
 ## Manage the daemon
 
 ```sh

@@ -13,6 +13,8 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -254,6 +256,25 @@ func runPtyOwner(root, session, cwd, commandJSON string) error {
 	})
 }
 
+// configReadValues maps every key "kenn-forge config read" supports to the
+// value it prints. Key lookup, the unsupported-key error, and the shell
+// completer all derive from this map, so a key added here reaches the CLI and
+// completion together and neither side can be updated alone.
+var configReadValues = map[string]func(*config.Config) string{
+	"port": func(cfg *config.Config) string { return strconv.Itoa(cfg.Port) },
+}
+
+// configReadKeys lists every key "kenn-forge config read" supports, sorted so
+// error text and shell completion stay in a stable order.
+func configReadKeys() []string {
+	keys := make([]string, 0, len(configReadValues))
+	for key := range configReadValues {
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+	return keys
+}
+
 func readConfigValue(configPath, key string, stdout io.Writer) error {
 	if err := config.EnsureDefault(configPath); err != nil {
 		return fmt.Errorf("ensure config: %w", err)
@@ -263,13 +284,12 @@ func readConfigValue(configPath, key string, stdout io.Writer) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	switch key {
-	case "port":
-		_, err := fmt.Fprintf(stdout, "%d\n", cfg.Port)
-		return err
-	default:
-		return fmt.Errorf("unsupported config key %q", key)
+	render, ok := configReadValues[key]
+	if !ok {
+		return fmt.Errorf("unsupported config key %q (supported: %s)", key, strings.Join(configReadKeys(), ", "))
 	}
+	_, err = fmt.Fprintln(stdout, render(cfg))
+	return err
 }
 
 func writeRuntimeStatus(dataDir string, asJSON bool, stdout io.Writer) error {

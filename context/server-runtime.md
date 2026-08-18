@@ -8,6 +8,15 @@ and the root event stream.
 - Bare `kenn-forge` is help-only, `serve` is foreground, and background
   lifecycle management is under `daemon start|status|stop|restart`
   (`cmd/kenn-forge/cli.go::newRootCommand`).
+- Shell completion is public CLI surface: keep Cobra's built-in `completion`
+  command enabled, register completers for enum-valued flags and positionals
+  from their canonical enum source, and keep hidden commands out of help and
+  completion output (`cmd/kenn-forge/completions.go::registerCompletions`).
+- A completer must offer only values the target command would accept. Inherited
+  persistent flags reach commands that reject them, so gate those completers on
+  the same predicate the flag validation uses
+  (`internal/cli/ctl/ctl.go::IsControlCommand`). Cobra still completes the
+  inherited flag names themselves, so gating covers values only.
 - `daemon start` is idempotent: reuse requires verified identity for the same
   resolved `data_dir`; incompatible versions require `daemon restart`
   (`internal/daemonruntime/lifecycle.go::NewManager`).

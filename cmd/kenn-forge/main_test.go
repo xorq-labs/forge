@@ -901,14 +901,13 @@ func TestRootHelpListsEveryPublicCommandWithoutStartingServer(t *testing.T) {
 	require.NoError(cmd.Execute())
 
 	for _, name := range []string{
-		"activity", "agent-hook", "api", "archive", "config", "docs",
+		"activity", "agent-hook", "api", "archive", "completion", "config", "docs",
 		"daemon", "issues", "pulls", "quickstart", "rate-limits", "repo-summaries",
 		"repos", "serve", "stacks", "sync", "version", "workspaces",
 	} {
 		assert.Contains(stdout.String(), name)
 	}
 	assert.NotContains(stdout.String(), "pty-owner")
-	assert.NotContains(stdout.String(), "completion")
 	assert.False(started)
 }
 

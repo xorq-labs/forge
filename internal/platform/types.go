@@ -14,6 +14,13 @@ const (
 	KindGitea   Kind = "gitea"
 )
 
+// Kinds returns the canonical supported provider kinds in declaration order.
+// Consumers that enumerate providers (for example CLI shell completion) must
+// read this list instead of duplicating the constant strings.
+func Kinds() []Kind {
+	return []Kind{KindGitHub, KindGitLab, KindForgejo, KindGitea}
+}
+
 const (
 	DefaultGitHubHost  = "github.com"
 	DefaultGitLabHost  = "gitlab.com"

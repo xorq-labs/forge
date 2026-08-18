@@ -37,12 +37,11 @@ func newRootCommand(opts cliOptions) *cobra.Command {
 	}
 
 	root := &cobra.Command{
-		Use:               "kenn-forge",
-		Short:             "Local-first maintainer console",
-		Args:              cobra.NoArgs,
-		SilenceErrors:     true,
-		SilenceUsage:      true,
-		CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
+		Use:           "kenn-forge",
+		Short:         "Local-first maintainer console",
+		Args:          cobra.NoArgs,
+		SilenceErrors: true,
+		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Help()
 		},
@@ -68,6 +67,7 @@ func newRootCommand(opts cliOptions) *cobra.Command {
 		newPtyOwnerCommand(),
 		serve.NewCommand(opts.RunServer),
 	)
+	registerCompletions(root)
 	return root
 }
 

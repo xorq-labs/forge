@@ -666,6 +666,19 @@ const (
 	KanbanStatusAwaitingMerge KanbanStatus = "awaiting_merge"
 )
 
+// KanbanStatuses lists every kanban status in board order. Shell completion
+// reads this list so it cannot drift from the constants above;
+// TestValidKanbanStatesMatchesKanbanStatuses fails when the API's accepted set
+// diverges from it.
+func KanbanStatuses() []KanbanStatus {
+	return []KanbanStatus{
+		KanbanStatusNew,
+		KanbanStatusReviewing,
+		KanbanStatusWaiting,
+		KanbanStatusAwaitingMerge,
+	}
+}
+
 func (mr MergeRequest) Compare(other MergeRequest) int {
 	return cmp.Compare(mr.Number, other.Number)
 }

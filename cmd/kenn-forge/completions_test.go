@@ -14,6 +14,7 @@ import (
 	"go.kenn.io/forge/internal/archive/report"
 	"go.kenn.io/forge/internal/cli/ctl"
 	"go.kenn.io/forge/internal/cli/serve"
+	"go.kenn.io/forge/internal/db"
 )
 
 func newCompletionTestRoot(t *testing.T, stdout io.Writer) *cobra.Command {
@@ -105,7 +106,11 @@ func TestKanbanFlagCompletion(t *testing.T) {
 
 	got, directive := completion(cmd, nil, "")
 
-	assert.ElementsMatch(t, []cobra.Completion{"new", "reviewing", "waiting", "awaiting_merge"}, got)
+	expected := make([]cobra.Completion, 0, len(db.KanbanStatuses()))
+	for _, status := range db.KanbanStatuses() {
+		expected = append(expected, string(status))
+	}
+	assert.ElementsMatch(t, expected, got)
 	assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
 }
 
@@ -144,6 +149,11 @@ func TestAPIMethodArgCompletion(t *testing.T) {
 	path, pathDirective := cmd.ValidArgsFunction(cmd, []string{"GET"}, "")
 	assert.Empty(path)
 	assert.Equal(cobra.ShellCompDirectiveNoFileComp, pathDirective)
+
+	// Body arguments accept "@filename", so they must keep file completion.
+	body, bodyDirective := cmd.ValidArgsFunction(cmd, []string{"POST", "/pulls"}, "")
+	assert.Empty(body)
+	assert.Equal(cobra.ShellCompDirectiveDefault, bodyDirective)
 }
 
 func TestConfigKeyArgCompletion(t *testing.T) {

@@ -504,14 +504,14 @@ func renderArchiveReport(model report.Model, format string) (string, error) {
 	case "markdown":
 		return report.RenderMarkdown(model)
 	case "json":
+		data, err := json.MarshalIndent(model, "", "  ")
+		if err != nil {
+			return "", fmt.Errorf("render archive report JSON: %w", err)
+		}
+		return string(data) + "\n", nil
 	default:
 		return "", fmt.Errorf("unsupported archive report format %q", format)
 	}
-	data, err := json.MarshalIndent(model, "", "  ")
-	if err != nil {
-		return "", fmt.Errorf("render archive report JSON: %w", err)
-	}
-	return string(data) + "\n", nil
 }
 
 func writeArchiveJSON(output io.Writer, value any) error {

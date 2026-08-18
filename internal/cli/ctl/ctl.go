@@ -100,7 +100,12 @@ func registerCommands(root *cobra.Command, deps commandDeps) {
 	root.SetOut(deps.Stdout)
 	root.SetErr(deps.Stderr)
 	root.PersistentFlags().String("server", "", "kenn-forge server URL (defaults to kenn-forge config host/port)")
-	root.PersistentFlags().StringP("output", "o", "json", "response format: json, yaml, or jsonl")
+	root.PersistentFlags().StringP(
+		"output",
+		"o",
+		OutputFormats()[0],
+		"response format: "+strings.Join(OutputFormats(), ", "),
+	)
 	root.PersistentFlags().Duration("timeout", 30*time.Second, "HTTP request timeout")
 	mustBind(cfg, root.PersistentFlags().Lookup("server"), "server")
 	mustBind(cfg, root.PersistentFlags().Lookup("output"), "output")
@@ -218,10 +223,12 @@ func mustBind(cfg *viper.Viper, flag *pflag.Flag, key string) {
 	}
 }
 
-// OutputFormats lists every value the --output flag accepts, in the order help
-// text presents them. Flag validation, the quickstart payload, encodeStructured
-// coverage, and shell completion all read this list so a new format cannot
-// reach one of them alone.
+// OutputFormats lists every value the --output flag accepts, with the default
+// first. The flag default, its usage string, flag validation, the quickstart
+// payload, and shell completion all read this list, and
+// TestOutputFormatsAllEncode ties it to encodeStructured, so a new format
+// cannot reach one of them alone. The root command's Long text still spells the
+// formats out in prose.
 func OutputFormats() []string {
 	return []string{"json", "yaml", "jsonl"}
 }

@@ -94,12 +94,12 @@ func registerArchiveFormatCompletion(cmd *cobra.Command) {
 // Panics if the flag doesn't exist on the command (programming error).
 func registerKanbanCompletion(cmd *cobra.Command) {
 	if err := cmd.RegisterFlagCompletionFunc("kanban", func(_ *cobra.Command, _ []string, _ string) ([]cobra.Completion, cobra.ShellCompDirective) {
-		return []cobra.Completion{
-			string(db.KanbanStatusNew),
-			string(db.KanbanStatusReviewing),
-			string(db.KanbanStatusWaiting),
-			string(db.KanbanStatusAwaitingMerge),
-		}, cobra.ShellCompDirectiveNoFileComp
+		statuses := db.KanbanStatuses()
+		completions := make([]cobra.Completion, 0, len(statuses))
+		for _, status := range statuses {
+			completions = append(completions, string(status))
+		}
+		return completions, cobra.ShellCompDirectiveNoFileComp
 	}); err != nil {
 		panic(fmt.Sprintf("registering kanban completion for %s: %v", cmd.Name(), err))
 	}
@@ -125,7 +125,12 @@ func registerProviderArgCompletion(cmd *cobra.Command) {
 // "api METHOD PATH [body...]".
 func registerAPIMethodCompletion(cmd *cobra.Command) {
 	cmd.ValidArgsFunction = func(_ *cobra.Command, args []string, _ string) ([]cobra.Completion, cobra.ShellCompDirective) {
-		if len(args) != 0 {
+		// Body arguments accept "@filename" because the shorthand parser runs
+		// with EnableFileInput, so they keep default file completion.
+		if len(args) >= 2 {
+			return nil, cobra.ShellCompDirectiveDefault
+		}
+		if len(args) == 1 {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 		return []cobra.Completion{

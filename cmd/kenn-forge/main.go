@@ -264,9 +264,9 @@ var configReadValues = map[string]func(*config.Config) string{
 	"port": func(cfg *config.Config) string { return strconv.Itoa(cfg.Port) },
 }
 
-// ConfigReadKeys lists every key "kenn-forge config read" supports, sorted so
+// configReadKeys lists every key "kenn-forge config read" supports, sorted so
 // error text and shell completion stay in a stable order.
-func ConfigReadKeys() []string {
+func configReadKeys() []string {
 	keys := make([]string, 0, len(configReadValues))
 	for key := range configReadValues {
 		keys = append(keys, key)
@@ -286,7 +286,7 @@ func readConfigValue(configPath, key string, stdout io.Writer) error {
 
 	render, ok := configReadValues[key]
 	if !ok {
-		return fmt.Errorf("unsupported config key %q (supported: %s)", key, strings.Join(ConfigReadKeys(), ", "))
+		return fmt.Errorf("unsupported config key %q (supported: %s)", key, strings.Join(configReadKeys(), ", "))
 	}
 	_, err = fmt.Fprintln(stdout, render(cfg))
 	return err

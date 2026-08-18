@@ -15,7 +15,8 @@ and the root event stream.
 - A completer must offer only values the target command would accept. Inherited
   persistent flags reach commands that reject them, so gate those completers on
   the same predicate the flag validation uses
-  (`internal/cli/ctl/ctl.go::IsControlCommand`).
+  (`internal/cli/ctl/ctl.go::IsControlCommand`). Cobra still completes the
+  inherited flag names themselves, so gating covers values only.
 - `daemon start` is idempotent: reuse requires verified identity for the same
   resolved `data_dir`; incompatible versions require `daemon restart`
   (`internal/daemonruntime/lifecycle.go::NewManager`).

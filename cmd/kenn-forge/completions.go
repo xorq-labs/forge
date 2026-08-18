@@ -12,9 +12,9 @@ import (
 )
 
 // registerCompletions wires shell completion for enum-valued flags and
-// positional arguments onto the assembled command tree. Every completer
-// returns ShellCompDirectiveNoFileComp; flags that take paths, such as
-// --config and --binary, keep Cobra's default file completion.
+// positional arguments onto the assembled command tree. Inputs that name a
+// path keep Cobra's default file completion: --config, --binary, and the
+// trailing body arguments of "api".
 func registerCompletions(root *cobra.Command) {
 	registerOutputCompletion(root)
 	registerKanbanCompletion(mustFindCommand(root, "pulls"))
@@ -29,7 +29,6 @@ func registerCompletions(root *cobra.Command) {
 }
 
 // mustFindCommand resolves a subcommand by its name path.
-// Panics if the command doesn't exist on the tree (programming error).
 func mustFindCommand(root *cobra.Command, names ...string) *cobra.Command {
 	current := root
 	for _, name := range names {
@@ -41,15 +40,13 @@ func mustFindCommand(root *cobra.Command, names ...string) *cobra.Command {
 			}
 		}
 		if next == nil {
-			panic(fmt.Sprintf("finding command %s under %s for completion", name, current.Name()))
+			panic(fmt.Sprintf("find command %s under %s for completion", name, current.Name()))
 		}
 		current = next
 	}
 	return current
 }
 
-// registerAgentCompletion registers shell completion for the --agent flag.
-// Panics if the flag doesn't exist on the command (programming error).
 func registerAgentCompletion(cmd *cobra.Command) {
 	if err := cmd.RegisterFlagCompletionFunc("agent", func(_ *cobra.Command, _ []string, _ string) ([]cobra.Completion, cobra.ShellCompDirective) {
 		profiles := agenthook.Profiles()
@@ -59,15 +56,15 @@ func registerAgentCompletion(cmd *cobra.Command) {
 		}
 		return agents, cobra.ShellCompDirectiveNoFileComp
 	}); err != nil {
-		panic(fmt.Sprintf("registering agent completion for %s: %v", cmd.Name(), err))
+		panic(fmt.Sprintf("register agent completion for %s: %v", cmd.Name(), err))
 	}
 }
 
 // registerOutputCompletion registers shell completion for the --output flag.
-// The flag is persistent on the root, so every command inherits it; only API
-// control commands accept it, and the completer stays silent elsewhere rather
-// than suggesting values the command would reject.
-// Panics if the flag doesn't exist on the command (programming error).
+// The flag is persistent on the root, so every command inherits it while only
+// API control commands accept it. Offering its values elsewhere would suggest
+// input the command rejects. Cobra still completes the inherited flag name
+// itself, which this cannot suppress.
 func registerOutputCompletion(cmd *cobra.Command) {
 	if err := cmd.RegisterFlagCompletionFunc("output", func(target *cobra.Command, _ []string, _ string) ([]cobra.Completion, cobra.ShellCompDirective) {
 		if !ctl.IsControlCommand(target) {
@@ -75,23 +72,18 @@ func registerOutputCompletion(cmd *cobra.Command) {
 		}
 		return ctl.OutputFormats(), cobra.ShellCompDirectiveNoFileComp
 	}); err != nil {
-		panic(fmt.Sprintf("registering output completion for %s: %v", cmd.Name(), err))
+		panic(fmt.Sprintf("register output completion for %s: %v", cmd.Name(), err))
 	}
 }
 
-// registerArchiveFormatCompletion registers shell completion for the
-// "archive report --format" flag.
-// Panics if the flag doesn't exist on the command (programming error).
 func registerArchiveFormatCompletion(cmd *cobra.Command) {
 	if err := cmd.RegisterFlagCompletionFunc("format", func(_ *cobra.Command, _ []string, _ string) ([]cobra.Completion, cobra.ShellCompDirective) {
 		return archiveReportFormats(), cobra.ShellCompDirectiveNoFileComp
 	}); err != nil {
-		panic(fmt.Sprintf("registering archive format completion for %s: %v", cmd.Name(), err))
+		panic(fmt.Sprintf("register archive format completion for %s: %v", cmd.Name(), err))
 	}
 }
 
-// registerKanbanCompletion registers shell completion for the --kanban flag.
-// Panics if the flag doesn't exist on the command (programming error).
 func registerKanbanCompletion(cmd *cobra.Command) {
 	if err := cmd.RegisterFlagCompletionFunc("kanban", func(_ *cobra.Command, _ []string, _ string) ([]cobra.Completion, cobra.ShellCompDirective) {
 		statuses := db.KanbanStatuses()
@@ -101,7 +93,7 @@ func registerKanbanCompletion(cmd *cobra.Command) {
 		}
 		return completions, cobra.ShellCompDirectiveNoFileComp
 	}); err != nil {
-		panic(fmt.Sprintf("registering kanban completion for %s: %v", cmd.Name(), err))
+		panic(fmt.Sprintf("register kanban completion for %s: %v", cmd.Name(), err))
 	}
 }
 
@@ -151,6 +143,6 @@ func registerConfigKeyCompletion(cmd *cobra.Command) {
 		if len(args) != 0 {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
-		return ConfigReadKeys(), cobra.ShellCompDirectiveNoFileComp
+		return configReadKeys(), cobra.ShellCompDirectiveNoFileComp
 	}
 }

@@ -666,10 +666,11 @@ const (
 	KanbanStatusAwaitingMerge KanbanStatus = "awaiting_merge"
 )
 
-// KanbanStatuses lists every kanban status in board order. Shell completion
-// reads this list so it cannot drift from the constants above;
-// TestValidKanbanStatesMatchesKanbanStatuses fails when the API's accepted set
-// diverges from it.
+// KanbanStatuses lists every kanban status in board order, restating the
+// constants above so callers can enumerate them. Shell completion reads this
+// list, TestKanbanEnumTagsMatchKanbanStatuses ties it to the enum tags below,
+// and TestValidKanbanStatesMatchesKanbanStatuses ties it to the states the
+// kanban mutation accepts.
 func KanbanStatuses() []KanbanStatus {
 	return []KanbanStatus{
 		KanbanStatusNew,

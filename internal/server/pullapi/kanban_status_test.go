@@ -7,10 +7,11 @@ import (
 	"go.kenn.io/forge/internal/db"
 )
 
-// TestValidKanbanStatesMatchesKanbanStatuses ties the kanban states this API
-// accepts to db.KanbanStatuses, which shell completion offers. Without this
-// guard a new status could reach one set and not the other, so the CLI would
-// complete a value the API rejects or reject a value it completes.
+// TestValidKanbanStatesMatchesKanbanStatuses ties the statuses the kanban
+// mutation accepts to db.KanbanStatuses, which shell completion offers. The
+// list filter passes its value straight to the query layer, so this guards the
+// mutation boundary: without it a new status could become settable without
+// being offered, or offered without being settable.
 func TestValidKanbanStatesMatchesKanbanStatuses(t *testing.T) {
 	expected := make([]string, 0, len(db.KanbanStatuses()))
 	for _, status := range db.KanbanStatuses() {

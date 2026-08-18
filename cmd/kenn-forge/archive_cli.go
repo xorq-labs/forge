@@ -20,9 +20,10 @@ import (
 )
 
 // archiveReportFormats lists every value "archive report --format" accepts,
-// with the default first. The flag default, its help text, format validation,
-// the renderer, and shell completion all read this list so a new format cannot
-// reach one of them alone.
+// with the default first. The flag default, its usage string, format
+// validation, and shell completion all read this list, and
+// TestArchiveReportFormatsAllRender ties it to renderArchiveReport, which
+// switches on the format itself.
 func archiveReportFormats() []string {
 	return []string{"markdown", "json"}
 }

@@ -174,7 +174,7 @@ func TestConfigReadKeysAllResolve(t *testing.T) {
 	cfgPath := filepath.Join(dir, "config.toml")
 	require.NoError(os.WriteFile(cfgPath, []byte("port = 9123\n"), 0o644))
 
-	for _, key := range ConfigReadKeys() {
+	for _, key := range configReadKeys() {
 		var stdout bytes.Buffer
 		require.NoError(readConfigValue(cfgPath, key, &stdout), "completed key %q must resolve", key)
 		require.NotEmpty(stdout.String())
